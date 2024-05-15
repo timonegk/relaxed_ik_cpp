@@ -1,0 +1,4 @@
+<library path="relaxed_ik_plugin">
+  <class name="relaxed_ik/RelaxedIkPlugin" type="relaxed_ik::RelaxedIKPlugin" base_class_type="kinematics::KinematicsBase">
+  </class>
+</library>

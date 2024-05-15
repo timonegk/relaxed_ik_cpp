@@ -1,0 +1,9 @@
+relaxed_ik:
+  position_threshold: {
+    type: double,
+    default_value: 0.001,
+    description: "Position threshold for solving IK, in meters",
+    validation: {
+      gt_eq<>: [0.0],
+    }
+  }

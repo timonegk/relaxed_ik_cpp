@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>relaxed_ik_cpp</name>
+  <version>1.0.0</version>
+  <description>C++ Implementation of RelaxedIK</description>
+  <maintainer email="timon.engelke@dlr.de">Timon Engelke</maintainer>
+  <license>MIT</license>
+
+  <depend>generate_parameter_library</depend>
+  <depend>libnlopt-dev</depend>
+  <depend>moveit_core</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>tf2_eigen</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
