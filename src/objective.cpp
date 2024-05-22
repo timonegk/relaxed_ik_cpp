@@ -60,7 +60,7 @@ SelfCollision::SelfCollision(const moveit::core::RobotModelConstPtr &robot_model
                                                                                                       1, 0.0, links[i], j);
             if (g) {
                 geoms_.push_back(g);
-                fcl_objs_[links[i]->getName()].push_back(collision_detection::FCLCollisionObjectPtr(new fcl::CollisionObject(g->collision_geometry_)));
+                fcl_objs_[links[i]->getName()].push_back(std::make_shared<fcl::CollisionObjectd>(g->collision_geometry_));
             } else {
                 std::cerr << "Unable to construct collision geometry for link '" << links[i]->getName() << "'"
                           << std::endl;
