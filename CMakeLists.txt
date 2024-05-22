@@ -24,6 +24,7 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(generate_parameter_library REQUIRED)
 find_package(NLopt REQUIRED)
+find_package(hpp-fcl REQUIRED)
 
 generate_parameter_library(
   relaxed_ik_parameters
@@ -59,6 +60,22 @@ install(
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
+)
+
+add_executable(test_concave
+  test/test_concave_objects.cpp
+)
+ament_target_dependencies(test_concave PUBLIC
+  moveit_core
+  hpp-fcl
+)
+install(
+  TARGETS test_concave
+  DESTINATION lib/${PROJECT_NAME}
+)
+install(
+  FILES test/cylinder.stl test/stick.stl
+  DESTINATION share/${PROJECT_NAME}/test
 )
 
 ament_package()
