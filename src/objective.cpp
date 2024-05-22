@@ -67,7 +67,7 @@ double ObjectiveMaster::call(const std::vector<double> &joints, std::vector<doub
         res += weight * objective->call(joints, vars_, *state_);
     }
     if (!grad.empty()) {
-        for (size_t i = 0; i < joints.size(); ++i) {
+        for (std::size_t i = 0; i < joints.size(); ++i) {
             std::vector<double> x_h(joints);
             const double eps = 0.000000001;
             x_h[i] += eps;

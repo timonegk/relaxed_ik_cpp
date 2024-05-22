@@ -14,7 +14,7 @@ namespace relaxed_ik {
 
     class MatchEEPosiDoF : public Objective {
     public:
-        MatchEEPosiDoF(int axis) : axis(axis) {}
+        explicit MatchEEPosiDoF(int axis) : axis(axis) {}
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
     private:
         int axis;
@@ -22,7 +22,7 @@ namespace relaxed_ik {
 
     class MatchEERotaDoF : public Objective {
     public:
-        MatchEERotaDoF(int axis) : axis(axis) {}
+        explicit MatchEERotaDoF(int axis) : axis(axis) {}
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
     private:
         int axis;

@@ -46,7 +46,7 @@ namespace relaxed_ik {
         const auto start_time = std::chrono::high_resolution_clock::now();
         const auto params = parameter_listener_->get_params();
 
-        const size_t n_joints = jmg_->getVariableCount();
+        const std::size_t n_joints = jmg_->getVariableCount();
         auto opt = nlopt::opt(nlopt::LD_SLSQP, n_joints);
         std::vector<double> lower_bounds, upper_bounds;
         for (const auto &variable: jmg_->getVariableNames()) {
