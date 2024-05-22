@@ -8,7 +8,7 @@
   <license>MIT</license>
 
   <depend>generate_parameter_library</depend>
-  <depend>libnlopt-dev</depend>
+  <depend>libnlopt-cxx-dev</depend>
   <depend>moveit_core</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>

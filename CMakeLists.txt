@@ -48,7 +48,7 @@ ament_target_dependencies(relaxed_ik_plugin PUBLIC
   tf2_eigen
 )
 target_link_libraries(relaxed_ik_plugin PUBLIC
-  nlopt
+  nlopt_cxx
   relaxed_ik_parameters
 )
 
