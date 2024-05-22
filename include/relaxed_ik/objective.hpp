@@ -4,9 +4,9 @@
 #include <cstddef>
 #include <moveit/robot_state/robot_state.h>
 #include <relaxed_ik/variables.hpp>
+#include <moveit/collision_detection_fcl/collision_common.h>
 
 namespace relaxed_ik {
-
     class Objective {
     public:
         virtual double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) = 0;
@@ -36,6 +36,16 @@ namespace relaxed_ik {
     class MatchEEQuatGoals : public Objective {
     public:
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    };
+
+    class SelfCollision : public Objective {
+    public:
+        explicit SelfCollision(const moveit::core::RobotModelConstPtr &robot_model);
+        double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    private:
+        std::vector<collision_detection::FCLGeometryConstPtr> geoms_;
+        std::map<std::string, std::vector<collision_detection::FCLCollisionObjectPtr>> fcl_objs_;
+        collision_detection::AllowedCollisionMatrixConstPtr acm_;
     };
 
     class ObjectiveMaster {
