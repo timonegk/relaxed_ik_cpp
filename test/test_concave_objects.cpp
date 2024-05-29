@@ -93,6 +93,7 @@ void test_fcl() {
 
     std::chrono::duration<double> collision_time(0);
     std::chrono::duration<double> distance_time(0);
+    std::chrono::duration<double> distance_bin_time(0);
     int count = 100;
     for (int i = 0; i < count; ++i) {
         fcl::CollisionRequestd req;
@@ -108,8 +109,40 @@ void test_fcl() {
         fcl::collide(cylinder_fcl_col.get(), stick_fcl_col.get(), req, res);
         collision_time += (std::chrono::high_resolution_clock::now() - start);
         start = std::chrono::high_resolution_clock::now();
-        fcl::distance(cylinder_fcl_col.get(), stick_fcl_col.get(), dreq, dres);
+        double real_distance = fcl::distance(cylinder_fcl_col.get(), stick_fcl_col.get(), dreq, dres);
         distance_time += (std::chrono::high_resolution_clock::now() - start);
+
+        /*start = std::chrono::high_resolution_clock::now();
+
+        double diff = 0.4;
+        double current_padding = 0.0;
+        do {
+            auto cylinder_check_geom = collision_detection::createCollisionGeometry(cylinder_mesh, 1.0,
+                                                                                    current_padding,
+                                                                                    &cylinder_model, 0);
+            auto cylinder_check_col = std::make_shared<fcl::CollisionObjectd>(
+                    cylinder_check_geom->collision_geometry_);
+            cylinder_check_col->setTransform(cylinder_fcl_col->getTransform());
+            cylinder_check_col->computeAABB();
+            fcl::CollisionRequestd check_req;
+            fcl::CollisionResultd check_res;
+            bool collision = fcl::collide(cylinder_check_col.get(), stick_fcl_col.get(), check_req, check_res);
+            if (collision) {
+                // padding is too large
+                if (current_padding < diff) break;  // cannot subtract
+                current_padding -= diff;
+            } else {
+                current_padding += diff;
+            }
+            diff /= 2.0;
+        } while (current_padding < 1.0 && diff > 0.001);
+        double approx_distance = current_padding;
+        distance_bin_time += (std::chrono::high_resolution_clock::now() - start);
+        std::cout << fmt::format("Real distance: {:.6f}, approx distance: {:.6f}, diff {:.6f} ({:.2f}%)",
+                                 real_distance, approx_distance,
+                                 std::abs(real_distance - approx_distance),
+                                 std::abs(real_distance - approx_distance) / real_distance * 100) << std::endl;*/
+        std::cout << "Distance: " << real_distance << std::endl;
     }
     std::cout << fmt::format("FCL: Time for collision checking {}s, {}s per call", collision_time.count(), collision_time.count()/count) << std::endl;
     std::cout << fmt::format("FCL: Time for distance checking {}s, {}s per call", distance_time.count(), distance_time.count()/count) << std::endl;
