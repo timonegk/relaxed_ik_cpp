@@ -3,6 +3,9 @@
 #include <moveit/robot_state/robot_state.h>
 #include <relaxed_ik/objective.hpp>
 #include <relaxed_ik/relaxed_ik_plugin.hpp>
+#include <moveit/planning_scene/planning_scene.h>
+#include <geometric_shapes/shape_operations.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 namespace relaxed_ik {
 
@@ -115,6 +118,27 @@ double SelfCollision::call(const std::vector<double> &joints, const relaxed_ik::
     return res;
 }
 
+double EnvCollision::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
+                          const moveit::core::RobotState &state) {
+    // for o in objects
+    //  for shape in objects.shapes
+    //   add shape as collision object
+    //   apply shape's global transform to collision object
+    // this only has to be once at initialization because the objects don't change
+    // later, only do distance checks from links to objects
+    // also evaluate whether single-link distances are better than one total distance
+    // why would they be? maybe better gradients? bc small movements might produce smaller changes
+    // but I'm not sure if this makes sense
+    // all-distance = min(distances)
+    // for example it changes how big the gradient is:
+    // if only one link gets closer, the gradient is small, if all get closer, it is bigger
+    // with all-distance, this is not the case, the gradient is independent of how many links move
+    double distance = v.planning_scene->distanceToCollision(state);
+    //std::cout << "Distance is " << distance << std::endl;
+    double distance_cost = std::pow(0.02 / distance, 2);
+    return groove_loss(distance_cost, 0, 2, 2.5, 0.0035, 4);
+}
+
 ObjectiveMaster::ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars) : vars_(std::move(vars)) {
     state_ = std::make_shared<moveit::core::RobotState>(m);
     /*// Current RelaxedIK code
@@ -125,14 +149,15 @@ ObjectiveMaster::ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Vari
     objectives_.push_back(std::make_unique<MatchEERotaDoF>(1)); weights_.push_back(10);
     objectives_.push_back(std::make_unique<MatchEERotaDoF>(2)); weights_.push_back(10);*/
     // RelaxedIK paper (this is faster)
-    objectives_.push_back(std::make_unique<MatchEEPosGoals>()); weights_.push_back(50);
-    objectives_.push_back(std::make_unique<MatchEEQuatGoals>()); weights_.push_back(40);
-    objectives_.push_back(std::make_unique<SelfCollision>(m)); weights_.push_back(1);
+    objectives_.push_back(std::make_unique<MatchEEPosGoals>()); weights_.push_back(1);
+    objectives_.push_back(std::make_unique<MatchEEQuatGoals>()); weights_.push_back(1);
+    //objectives_.push_back(std::make_unique<SelfCollision>(m)); weights_.push_back(1);
+    objectives_.push_back(std::make_unique<EnvCollision>()); weights_.push_back(1);
 }
 
 double ObjectiveMaster::call(const std::vector<double> &joints, std::vector<double> &grad) {
     state_->setJointGroupPositions(vars_.joint_group, joints);
-    state_->updateLinkTransforms();
+    state_->update();
     double res = 0;
     for (const auto &[objective, weight] : boost::combine(objectives_, weights_)) {
         res += weight * objective->call(joints, vars_, *state_);

@@ -42,7 +42,6 @@ namespace relaxed_ik {
             moveit_msgs::msg::MoveItErrorCodes &error_code,
             kinematics::KinematicsQueryOptions const &options,
             moveit::core::RobotState const *context_state) const {
-        (void) context_state;  // not used
         const auto start_time = std::chrono::high_resolution_clock::now();
         const auto params = parameter_listener_->get_params();
 
@@ -65,6 +64,7 @@ namespace relaxed_ik {
         vars.ee_name = tip_frames_[0];
         vars.joint_group = group_name_;
         tf2::fromMsg(ik_poses[0], vars.target_pose);
+        vars.planning_scene = context_state->getAttachedPlanningScene();
         ObjectiveMaster om(robot_model_, vars);
 
         opt.set_min_objective(RelaxedIKPlugin::wrap, &om);
