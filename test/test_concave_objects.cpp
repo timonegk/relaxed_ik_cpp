@@ -37,7 +37,6 @@ void test_hpp_fcl() {
         hpp::fcl::CollisionRequest req; hpp::fcl::CollisionResult res;
         req.enable_distance_lower_bound = true;
         auto n_contacts = hpp::fcl::collide(cylinder_obj.get(), stick_obj.get(), req, res);
-        std::cout << "Num Contacts: " << n_contacts << std::endl;
         std::cout << "Distance: " << res.distance_lower_bound << std::endl;
     }
 
@@ -84,7 +83,6 @@ void test_fcl() {
         fcl::CollisionRequestd req;
         fcl::CollisionResultd res;
         auto n_contacts = fcl::collide(cylinder_fcl_col.get(), stick_fcl_col.get(), req, res);
-        std::cout << "Num Contacts: " << n_contacts << std::endl;
         fcl::DistanceRequestd dreq(false);
         fcl::DistanceResultd dres;
         double distance = fcl::distance(cylinder_fcl_col.get(), stick_fcl_col.get(), dreq, dres);
@@ -94,9 +92,11 @@ void test_fcl() {
     std::chrono::duration<double> collision_time(0);
     std::chrono::duration<double> distance_time(0);
     std::chrono::duration<double> distance_bin_time(0);
-    int count = 100;
+    const int count = 100;
+    int distance_count = 0;
     for (int i = 0; i < count; ++i) {
         fcl::CollisionRequestd req;
+	req.enable_contact = true;
         fcl::CollisionResultd res;
         fcl::DistanceRequestd dreq(false);
         fcl::DistanceResultd dres;
@@ -108,9 +108,14 @@ void test_fcl() {
         auto start = std::chrono::high_resolution_clock::now();
         fcl::collide(cylinder_fcl_col.get(), stick_fcl_col.get(), req, res);
         collision_time += (std::chrono::high_resolution_clock::now() - start);
-        start = std::chrono::high_resolution_clock::now();
-        double real_distance = fcl::distance(cylinder_fcl_col.get(), stick_fcl_col.get(), dreq, dres);
-        distance_time += (std::chrono::high_resolution_clock::now() - start);
+	if (!res.isCollision()) {
+		distance_count++;
+		start = std::chrono::high_resolution_clock::now();
+		double real_distance = fcl::distance(cylinder_fcl_col.get(), stick_fcl_col.get(), dreq, dres);
+		distance_time += (std::chrono::high_resolution_clock::now() - start);
+	} else {
+		std::cout << "Penetration depth: " << res.getContact(0).penetration_depth << std::endl;
+	}
 
         /*start = std::chrono::high_resolution_clock::now();
 
@@ -142,10 +147,10 @@ void test_fcl() {
                                  real_distance, approx_distance,
                                  std::abs(real_distance - approx_distance),
                                  std::abs(real_distance - approx_distance) / real_distance * 100) << std::endl;*/
-        std::cout << "Distance: " << real_distance << std::endl;
+        //std::cout << "Distance: " << real_distance << std::endl;
     }
     std::cout << fmt::format("FCL: Time for collision checking {}s, {}s per call", collision_time.count(), collision_time.count()/count) << std::endl;
-    std::cout << fmt::format("FCL: Time for distance checking {}s, {}s per call", distance_time.count(), distance_time.count()/count) << std::endl;
+    std::cout << fmt::format("FCL: Time for distance checking {}s, {}s per call", distance_time.count(), distance_time.count()/distance_count) << std::endl;
 }
 
 int main() {
