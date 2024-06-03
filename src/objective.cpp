@@ -10,6 +10,7 @@
 namespace relaxed_ik {
 
 static double groove_loss(double x, double t, double d, double c, double f, double g) {
+    // -e^{-\frac{(x-t)^{d}}{2\cdot c^{2}}}+f\cdot (x-t)^{g}
     return -exp((-pow(x - t, d)) / (2.0 * pow(c, 2))) + f * pow(x - t, g);
 }
 
