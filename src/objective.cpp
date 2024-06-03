@@ -175,10 +175,17 @@ ObjectiveMaster::ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Vari
     objectives_.push_back(std::make_unique<MatchEEPosGoals>()); weights_.push_back(1);
     objectives_.push_back(std::make_unique<MatchEEQuatGoals>()); weights_.push_back(1);
     //objectives_.push_back(std::make_unique<SelfCollision>(m)); weights_.push_back(1);
-    objectives_.push_back(std::make_unique<EnvCollision>()); weights_.push_back(1);
+    objectives_.push_back(std::make_unique<EnvCollisionDepth>()); weights_.push_back(1);
+    node_ = rclcpp::Node::make_shared("relaxed_ik");
+    js_pub_ = node_->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
 }
 
 double ObjectiveMaster::call(const std::vector<double> &joints, std::vector<double> &grad) {
+    sensor_msgs::msg::JointState js;
+    js.header.stamp = node_->now();
+    js.name = state_->getVariableNames();
+    js.position = joints;
+    js_pub_->publish(js);
     state_->setJointGroupPositions(vars_.joint_group, joints);
     state_->update();
     double res = 0;

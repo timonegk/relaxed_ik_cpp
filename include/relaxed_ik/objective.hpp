@@ -67,5 +67,7 @@ namespace relaxed_ik {
         std::vector<double> weights_;
         moveit::core::RobotStatePtr state_;
         const Variables vars_;
+        std::shared_ptr<rclcpp::Node> node_;
+        std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>> js_pub_;
     };
 }
