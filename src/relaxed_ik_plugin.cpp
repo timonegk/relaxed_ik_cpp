@@ -97,9 +97,10 @@ namespace relaxed_ik {
                 const Eigen::Isometry3d current = state_->getGlobalLinkTransform(vars.ee_name);
                 const double position_threshold = 0.001;
                 const double orientation_threshold = 0.001;
-                const Eigen::Isometry3d pose_diff = vars.target_pose.inverse() * current;
-                const double linear_distance = pose_diff.translation().norm();
-                const double angular_distance = std::acos((pose_diff.rotation().trace() - 1) / 2);
+                const double linear_distance = (current.translation() - vars.target_pose.translation()).norm();
+                const Eigen::Quaterniond current_orientation(current.rotation());
+                const Eigen::Quaterniond target_orientation(vars.target_pose.rotation());
+                const double angular_distance = current_orientation.angularDistance(target_orientation);
                 found_solution = (linear_distance < position_threshold && angular_distance < orientation_threshold);
 
                 if (solution_callback && found_solution) {
