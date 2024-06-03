@@ -48,7 +48,12 @@ namespace relaxed_ik {
         collision_detection::AllowedCollisionMatrixConstPtr acm_;
     };
 
-    class EnvCollision : public Objective {
+    class EnvCollisionDistance : public Objective {
+    public:
+        double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    };
+
+    class EnvCollisionDepth : public Objective {
     public:
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
     };
