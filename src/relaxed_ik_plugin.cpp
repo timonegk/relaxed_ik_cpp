@@ -38,7 +38,7 @@ namespace relaxed_ik {
             std::vector<double> const &,
             std::vector<double> &solution,
             IKCallbackFn const &solution_callback,
-            IKCostFn const &cost_function,
+            IKCostFn const & /*cost_function*/,
             moveit_msgs::msg::MoveItErrorCodes &error_code,
             kinematics::KinematicsQueryOptions const &options,
             moveit::core::RobotState const *context_state) const {

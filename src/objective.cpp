@@ -19,7 +19,7 @@ static double swamp_loss(double x, double l_bound, double u_bound, double f1, do
     return (f1 + f2 * std::pow(x_scaled, 2)) * (1 - std::exp(-std::pow(x/b, p1))) - 1.0;
 }
 
-double MatchEEPosiDoF::call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) {
+double MatchEEPosiDoF::call(const std::vector<double> &, const Variables &v, const moveit::core::RobotState &state) {
     const Eigen::Isometry3d& current = state.getGlobalLinkTransform(v.ee_name);
     const Eigen::Isometry3d goal = v.target_pose;
     const Eigen::Vector3d linear = (goal.inverse() * current).translation();
@@ -27,7 +27,7 @@ double MatchEEPosiDoF::call(const std::vector<double> &joints, const Variables &
     return groove_loss(dist, 0, 2, 0.1, 10, 2);
 }
 
-double MatchEERotaDoF::call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) {
+double MatchEERotaDoF::call(const std::vector<double> &, const Variables &v, const moveit::core::RobotState &state) {
     const Eigen::Isometry3d& current = state.getGlobalLinkTransform(v.ee_name);
     const Eigen::Isometry3d goal = v.target_pose;
     const Eigen::Matrix3d rotation = (goal.inverse() * current).rotation();
@@ -36,7 +36,7 @@ double MatchEERotaDoF::call(const std::vector<double> &joints, const Variables &
     return groove_loss(scaled_angle, 0, 2, 0.1, 10, 2);
 }
 
-double MatchEEPosGoals::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
+double MatchEEPosGoals::call(const std::vector<double> &, const relaxed_ik::Variables &v,
                              const moveit::core::RobotState &state) {
     const Eigen::Isometry3d& current = state.getGlobalLinkTransform(v.ee_name);
     const Eigen::Isometry3d goal = v.target_pose;
@@ -44,7 +44,7 @@ double MatchEEPosGoals::call(const std::vector<double> &joints, const relaxed_ik
     return groove_loss(dist, 0, 2, 0.1, 10, 2);
 }
 
-double MatchEEQuatGoals::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
+double MatchEEQuatGoals::call(const std::vector<double> &, const relaxed_ik::Variables &v,
                               const moveit::core::RobotState &state) {
     const Eigen::Isometry3d& current = state.getGlobalLinkTransform(v.ee_name);
     const Eigen::Isometry3d goal = v.target_pose;
@@ -72,7 +72,7 @@ SelfCollision::SelfCollision(const moveit::core::RobotModelConstPtr &robot_model
     }
     acm_ = std::make_shared<const collision_detection::AllowedCollisionMatrix>(*robot_model->getSRDF());
 }
-double SelfCollision::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
+double SelfCollision::call(const std::vector<double> &, const relaxed_ik::Variables &,
                            const moveit::core::RobotState &state) {
     for (const auto &[link_name, collision_objects] : fcl_objs_) {
         const auto link_model = state.getLinkModel(link_name);
@@ -100,7 +100,6 @@ double SelfCollision::call(const std::vector<double> &joints, const relaxed_ik::
                     for (const auto &o1: c1) {
                         for (const auto &o2: c2) {
                             fcl::DistanceResultd unused;
-                            auto start = std::chrono::high_resolution_clock::now();
                             double distance = fcl::distance(o1.get(), o2.get(), fcl::DistanceRequestd(false),
                                                             unused);
 
@@ -118,8 +117,8 @@ double SelfCollision::call(const std::vector<double> &joints, const relaxed_ik::
     return res;
 }
 
-double EnvCollision::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
-                          const moveit::core::RobotState &state) {
+double EnvCollisionDistance::call(const std::vector<double> &, const relaxed_ik::Variables &v,
+                                  const moveit::core::RobotState &state) {
     // for o in objects
     //  for shape in objects.shapes
     //   add shape as collision object
