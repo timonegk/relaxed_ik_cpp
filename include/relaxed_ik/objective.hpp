@@ -1,5 +1,6 @@
 #pragma once
 
+#include <utility>
 #include <vector>
 #include <cstddef>
 #include <moveit/robot_state/robot_state.h>
@@ -56,6 +57,14 @@ namespace relaxed_ik {
     class EnvCollisionDepth : public Objective {
     public:
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    };
+
+    class GoThroughGoal : public Objective {
+    public:
+        explicit GoThroughGoal(Eigen::Vector3d point) : point_(std::move(point)) {};
+        double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    private:
+        const Eigen::Vector3d point_;
     };
 
     class ObjectiveMaster {

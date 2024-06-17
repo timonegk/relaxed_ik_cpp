@@ -163,6 +163,27 @@ double EnvCollisionDepth::call(const std::vector<double> &, const relaxed_ik::Va
     return groove_loss(penetration_depth, 0, 2, 0.01, 10, 2);
 }
 
+double GoThroughGoal::call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) {
+    double min_distance = FLT_MAX;
+    for (std::size_t i = 0; i < state.getRobotModel()->getLinkModelCount() - 1; ++i) {
+        const moveit::core::LinkModel *frame_model = state.getRobotModel()->getLinkModel(i);
+        const moveit::core::LinkModel *next_frame_model = state.getRobotModel()->getLinkModel(i + 1);
+        const Eigen::Isometry3d frame = state.getGlobalLinkTransform(frame_model);
+        const Eigen::Isometry3d next_frame = state.getGlobalLinkTransform(next_frame_model);
+        Eigen::Vector3d projected_point;
+        if (frame.translation() != next_frame.translation()) {
+            const double t = (point_ - frame.translation()).dot(next_frame.translation() - frame.translation()) / (frame.translation() - next_frame.translation()).squaredNorm();
+            const double clipped_t = std::clamp(t, 0.0, 1.0);
+            projected_point = frame.translation() + clipped_t * (next_frame.translation() - frame.translation());
+        } else {
+            projected_point = frame.translation();
+        }
+        const double distance = (point_ - projected_point).squaredNorm();
+        min_distance = std::min(min_distance, distance);
+    }
+    return min_distance;
+}
+
 ObjectiveMaster::ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars) : vars_(std::move(vars)) {
     state_ = std::make_shared<moveit::core::RobotState>(m);
     /*// Current RelaxedIK code
@@ -176,7 +197,8 @@ ObjectiveMaster::ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Vari
     objectives_.push_back(std::make_unique<MatchEEPosGoals>()); weights_.push_back(1);
     objectives_.push_back(std::make_unique<MatchEEQuatGoals>()); weights_.push_back(1);
     //objectives_.push_back(std::make_unique<SelfCollision>(m)); weights_.push_back(1);
-    objectives_.push_back(std::make_unique<EnvCollisionDepth>()); weights_.push_back(1);
+    //objectives_.push_back(std::make_unique<EnvCollisionDepth>()); weights_.push_back(1);
+    objectives_.push_back(std::make_unique<GoThroughGoal>(Eigen::Vector3d({0.0, 1.0, 0.5}))); weights_.push_back(1);
     node_ = rclcpp::Node::make_shared("relaxed_ik");
     js_pub_ = node_->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
 }
