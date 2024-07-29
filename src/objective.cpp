@@ -1,8 +1,6 @@
 #include <utility>
-#include <boost/range/combine.hpp>
 #include <moveit/robot_state/robot_state.h>
 #include <relaxed_ik/objective.hpp>
-#include <relaxed_ik/relaxed_ik_plugin.hpp>
 #include <moveit/planning_scene/planning_scene.h>
 #include <geometric_shapes/shape_operations.h>
 #include <ament_index_cpp/get_package_share_directory.hpp>
@@ -137,7 +135,7 @@ double EnvCollisionDistance::call(const std::vector<double> &, const relaxed_ik:
     // allow end effector collision? or change reach setup? this does not work if it almost reaches
     collision_detection::AllowedCollisionMatrix acm;
     acm.setDefaultEntry("ee_link", true);
-    double distance = v.planning_scene->distanceToCollision(state, acm);
+    double distance = planning_scene_->distanceToCollision(state, acm);
     //double penalty_cutoff = 0.02;
     double penalty_cutoff = 0.01;
     // distance cost is 1 if distance == penalty_cutoff
@@ -153,7 +151,7 @@ double EnvCollisionDepth::call(const std::vector<double> &, const relaxed_ik::Va
     collision_detection::CollisionRequest req;
     req.contacts = true;
     collision_detection::CollisionResult res;
-    v.planning_scene->checkCollision(req, res, state);
+    planning_scene_->checkCollision(req, res, state);
     double penetration_depth = 0;
     for (const auto &[link_names, contacts] : res.contacts) {
         for (const auto &contact : contacts) {
@@ -163,7 +161,7 @@ double EnvCollisionDepth::call(const std::vector<double> &, const relaxed_ik::Va
     return groove_loss(penetration_depth, 0, 2, 0.01, 10, 2);
 }
 
-double GoThroughGoal::call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) {
+double RCMGoal::call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) {
     double min_distance = FLT_MAX;
     for (std::size_t i = 0; i < state.getRobotModel()->getLinkModelCount() - 1; ++i) {
         const moveit::core::LinkModel *frame_model = state.getRobotModel()->getLinkModel(i);
@@ -184,46 +182,49 @@ double GoThroughGoal::call(const std::vector<double> &joints, const Variables &v
     return min_distance;
 }
 
-ObjectiveMaster::ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars) : vars_(std::move(vars)) {
+RCMGoal2::RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Eigen::Vector3d &point) : planning_scene(robot_model) {
+    moveit_msgs::msg::CollisionObject co;
+    shape_msgs::msg::SolidPrimitive primitive;
+    primitive.type = shape_msgs::msg::SolidPrimitive::SPHERE;
+    primitive.dimensions.push_back(0.01);
+    co.primitives.push_back(primitive);
+    co.primitive_poses.emplace_back();
+    co.primitive_poses[0].position.x = point.x();
+    co.primitive_poses[0].position.y = point.y();
+    co.primitive_poses[0].position.z = point.z();
+    co.operation = moveit_msgs::msg::CollisionObject::ADD;
+    co.header.frame_id = "world";
+    co.id = "RCM";
+    planning_scene.processCollisionObjectMsg(co);
+}
+
+double RCMGoal2::call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) {
+    return planning_scene.distanceToCollision(state);
+}
+
+ObjectiveMaster::ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars, const std::vector<std::pair<std::shared_ptr<Objective>, double>> &objectives) : vars_(std::move(vars)) {
     state_ = std::make_shared<moveit::core::RobotState>(m);
-    /*// Current RelaxedIK code
-    objectives_.push_back(std::make_unique<MatchEEPosiDoF>(0)); weights_.push_back(50);
-    objectives_.push_back(std::make_unique<MatchEEPosiDoF>(1)); weights_.push_back(50);
-    objectives_.push_back(std::make_unique<MatchEEPosiDoF>(2)); weights_.push_back(50);
-    objectives_.push_back(std::make_unique<MatchEERotaDoF>(0)); weights_.push_back(10);
-    objectives_.push_back(std::make_unique<MatchEERotaDoF>(1)); weights_.push_back(10);
-    objectives_.push_back(std::make_unique<MatchEERotaDoF>(2)); weights_.push_back(10);*/
-    // RelaxedIK paper (this is faster)
-    objectives_.push_back(std::make_unique<MatchEEPosGoals>()); weights_.push_back(1);
-    objectives_.push_back(std::make_unique<MatchEEQuatGoals>()); weights_.push_back(1);
-    //objectives_.push_back(std::make_unique<SelfCollision>(m)); weights_.push_back(1);
-    //objectives_.push_back(std::make_unique<EnvCollisionDepth>()); weights_.push_back(1);
-    objectives_.push_back(std::make_unique<GoThroughGoal>(Eigen::Vector3d({0.0, 1.0, 0.5}))); weights_.push_back(1);
-    node_ = rclcpp::Node::make_shared("relaxed_ik");
-    js_pub_ = node_->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
+    objectives_ = objectives;
+    // RelaxedIK code uses MatchEEPosiDoF for each axis with weight 50 and Rota for each axis with weight 10
+    // The paper uses MatchEEPosGoals and MatchEEQuatGoals with weights 1 each. This is faster.
 }
 
 double ObjectiveMaster::call(const std::vector<double> &joints, std::vector<double> &grad) {
-    sensor_msgs::msg::JointState js;
-    js.header.stamp = node_->now();
-    js.name = state_->getVariableNames();
-    js.position = joints;
-    js_pub_->publish(js);
     state_->setJointGroupPositions(vars_.joint_group, joints);
     state_->update();
     double res = 0;
-    for (const auto &[objective, weight] : boost::combine(objectives_, weights_)) {
+    for (const auto &[objective, weight] : objectives_) {
         res += weight * objective->call(joints, vars_, *state_);
     }
     if (!grad.empty()) {
         for (std::size_t i = 0; i < joints.size(); ++i) {
             std::vector<double> x_h(joints);
-            const double eps = 0.000000001;
+            const double eps = 0.0001;
             x_h[i] += eps;
             state_->setJointGroupPositions(vars_.joint_group, x_h);
-            state_->updateLinkTransforms();
+            state_->update();
             double f_h = 0;
-            for (const auto &[objective, weight] : boost::combine(objectives_, weights_)) {
+            for (const auto &[objective, weight] : objectives_) {
                 f_h += weight * objective->call(joints, vars_, *state_);
             }
             grad[i] = (-res + f_h) / eps;

@@ -52,15 +52,14 @@ target_link_libraries(relaxed_ik_plugin PUBLIC
   nlopt_cxx
   relaxed_ik_parameters
 )
+target_include_directories(relaxed_ik_plugin PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
 
 pluginlib_export_plugin_description_file(moveit_core relaxed_ik_plugin_description.xml)
 
-install(
-  TARGETS relaxed_ik_plugin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
+install(TARGETS relaxed_ik_plugin DESTINATION lib)
+
+install(DIRECTORY include/relaxed_ik DESTINATION include)
 
 add_executable(test_concave
   test/test_concave_objects.cpp
@@ -78,4 +77,6 @@ install(
   DESTINATION share/${PROJECT_NAME}/test
 )
 
+ament_export_include_directories(include)
+ament_export_libraries(relaxed_ik_plugin)
 ament_package()

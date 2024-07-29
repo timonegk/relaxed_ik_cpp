@@ -149,6 +149,4 @@ namespace relaxed_ik {
         std::vector<std::string> link_names_;
         const moveit::core::JointModelGroup *jmg_;
     };
-
-
 }

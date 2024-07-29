@@ -51,32 +51,43 @@ namespace relaxed_ik {
 
     class EnvCollisionDistance : public Objective {
     public:
+        explicit EnvCollisionDistance(const planning_scene::PlanningSceneConstPtr &planning_scene) : planning_scene_(planning_scene) {};
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    private:
+        planning_scene::PlanningSceneConstPtr planning_scene_;
     };
 
     class EnvCollisionDepth : public Objective {
     public:
+        explicit EnvCollisionDepth(const planning_scene::PlanningSceneConstPtr &planning_scene) : planning_scene_(planning_scene) {};
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    private:
+        planning_scene::PlanningSceneConstPtr planning_scene_;
     };
 
-    class GoThroughGoal : public Objective {
+    class RCMGoal : public Objective {
     public:
-        explicit GoThroughGoal(Eigen::Vector3d point) : point_(std::move(point)) {};
+        explicit RCMGoal(Eigen::Vector3d point) : point_(std::move(point)) {};
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
     private:
         const Eigen::Vector3d point_;
     };
 
+    class RCMGoal2 : public Objective {
+    public:
+        explicit RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Eigen::Vector3d &point);
+        double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    private:
+        planning_scene::PlanningScene planning_scene;
+    };
+
     class ObjectiveMaster {
     public:
-        ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars);
+        ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars, const std::vector<std::pair<std::shared_ptr<Objective>, double>> &objectives);
         double call(const std::vector<double> &joints, std::vector<double> &grad);
     private:
-        std::vector<std::unique_ptr<Objective>> objectives_;
-        std::vector<double> weights_;
+        std::vector<std::pair<std::shared_ptr<Objective>, double>> objectives_;
         moveit::core::RobotStatePtr state_;
         const Variables vars_;
-        std::shared_ptr<rclcpp::Node> node_;
-        std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>> js_pub_;
     };
 }

@@ -1,8 +1,38 @@
 #include <nlopt.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
 #include <relaxed_ik/relaxed_ik_plugin.hpp>
+#include <relaxed_ik/relaxed_ik_kinematics_query_options.hpp>
 
 namespace relaxed_ik {
+    // taken from BioIK
+    std::mutex relaxedIKKinematicsQueryOptionsMutex;
+    std::unordered_set<const void *> relaxedIKKinematicsQueryOptionsList;
+
+    RelaxedIKKinematicsQueryOptions::RelaxedIKKinematicsQueryOptions() {
+        std::lock_guard<std::mutex> lock(relaxedIKKinematicsQueryOptionsMutex);
+        relaxedIKKinematicsQueryOptionsList.insert(this);
+    }
+
+    RelaxedIKKinematicsQueryOptions::~RelaxedIKKinematicsQueryOptions() {
+        std::lock_guard<std::mutex> lock(relaxedIKKinematicsQueryOptionsMutex);
+        relaxedIKKinematicsQueryOptionsList.erase(this);
+    }
+
+    bool isRelaxedIKKinematicsQueryOptions(const void *ptr) {
+        std::lock_guard<std::mutex> lock(relaxedIKKinematicsQueryOptionsMutex);
+        return relaxedIKKinematicsQueryOptionsList.find(ptr) !=
+               relaxedIKKinematicsQueryOptionsList.end();
+    }
+
+    const RelaxedIKKinematicsQueryOptions *
+    toRelaxedIKKinematicsQueryOptions(const void *ptr) {
+        if (isRelaxedIKKinematicsQueryOptions(ptr))
+            return (const RelaxedIKKinematicsQueryOptions *)ptr;
+        else
+            return 0;
+    }
+
+
     bool RelaxedIKPlugin::initialize(const rclcpp::Node::SharedPtr &node,
                                      const moveit::core::RobotModel &robot_model,
                                      const std::string &group_name,
@@ -44,6 +74,7 @@ namespace relaxed_ik {
             moveit::core::RobotState const *context_state) const {
         const auto start_time = std::chrono::high_resolution_clock::now();
         const auto params = parameter_listener_->get_params();
+        auto *r_options = toRelaxedIKKinematicsQueryOptions(&options);
 
         const std::size_t n_joints = jmg_->getVariableCount();
         auto opt = nlopt::opt(nlopt::LD_SLSQP, n_joints);
@@ -64,8 +95,14 @@ namespace relaxed_ik {
         vars.ee_name = tip_frames_[0];
         vars.joint_group = group_name_;
         tf2::fromMsg(ik_poses[0], vars.target_pose);
-        vars.planning_scene = context_state->getAttachedPlanningScene();
-        ObjectiveMaster om(robot_model_, vars);
+        std::vector<std::pair<std::shared_ptr<Objective>, double>> objectives;
+        if (r_options) {
+            objectives = r_options->objectives_;
+        } else {
+            objectives.emplace_back(std::make_shared<MatchEEPosGoals>(), 1.0);
+            objectives.emplace_back(std::make_shared<MatchEEQuatGoals>(), 1.0);
+        }
+        ObjectiveMaster om(robot_model_, vars, r_options->objectives_);
 
         opt.set_min_objective(RelaxedIKPlugin::wrap, &om);
         opt.set_ftol_abs(0.0005);  // stop when function value is not improved by at least this
