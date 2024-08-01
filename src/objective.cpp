@@ -202,6 +202,13 @@ double RCMGoal2::call(const std::vector<double> &joints, const Variables &v, con
     return planning_scene.distanceToCollision(state);
 }
 
+double LineGoal::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
+                      const moveit::core::RobotState &state) {
+    Eigen::Vector3d link_position = state.getGlobalLinkTransform(link_name_).translation();
+    const Eigen::Vector3d p = link_position - axis_ * axis_.dot(link_position - point_);
+    return (point_ - p).squaredNorm();
+}
+
 ObjectiveMaster::ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars, const std::vector<std::pair<std::shared_ptr<Objective>, double>> &objectives) : vars_(std::move(vars)) {
     state_ = std::make_shared<moveit::core::RobotState>(m);
     objectives_ = objectives;

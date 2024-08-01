@@ -75,10 +75,21 @@ namespace relaxed_ik {
 
     class RCMGoal2 : public Objective {
     public:
-        explicit RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Eigen::Vector3d &point);
+        RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Eigen::Vector3d &point);
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
     private:
         planning_scene::PlanningScene planning_scene;
+    };
+
+    class LineGoal : public Objective {
+    public:
+        LineGoal(Eigen::Vector3d point, Eigen::Vector3d axis, std::string link_name) :
+                point_(std::move(point)), axis_(std::move(axis)), link_name_(std::move(link_name)) {};
+        double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    private:
+        const Eigen::Vector3d point_;
+        const Eigen::Vector3d axis_;
+        const std::string link_name_;
     };
 
     class ObjectiveMaster {

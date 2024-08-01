@@ -102,7 +102,7 @@ namespace relaxed_ik {
             objectives.emplace_back(std::make_shared<MatchEEPosGoals>(), 1.0);
             objectives.emplace_back(std::make_shared<MatchEEQuatGoals>(), 1.0);
         }
-        ObjectiveMaster om(robot_model_, vars, r_options->objectives_);
+        ObjectiveMaster om(robot_model_, vars, objectives);
 
         opt.set_min_objective(RelaxedIKPlugin::wrap, &om);
         opt.set_ftol_abs(0.0005);  // stop when function value is not improved by at least this
