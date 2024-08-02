@@ -92,6 +92,16 @@ namespace relaxed_ik {
         const std::string link_name_;
     };
 
+    class AlignmentGoal : public Objective {
+    public:
+        AlignmentGoal(Eigen::Vector3d axis, std::string link_name) :
+                axis_(std::move(axis)), link_name_(std::move(link_name)) {};
+        double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    private:
+        const Eigen::Vector3d axis_;
+        const std::string link_name_;
+    };
+
     class ObjectiveMaster {
     public:
         ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars, const std::vector<std::pair<std::shared_ptr<Objective>, double>> &objectives);

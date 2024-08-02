@@ -209,6 +209,13 @@ double LineGoal::call(const std::vector<double> &joints, const relaxed_ik::Varia
     return (point_ - p).squaredNorm();
 }
 
+double AlignmentGoal::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
+                           const moveit::core::RobotState &state) {
+    const Eigen::Isometry3d& link_pose = state.getGlobalLinkTransform(link_name_);
+    const Eigen::Vector3d axis = link_pose.rotation() * Eigen::Vector3d(0, 1, 0);
+    return (axis - axis_).squaredNorm();
+}
+
 ObjectiveMaster::ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars, const std::vector<std::pair<std::shared_ptr<Objective>, double>> &objectives) : vars_(std::move(vars)) {
     state_ = std::make_shared<moveit::core::RobotState>(m);
     objectives_ = objectives;
