@@ -216,6 +216,11 @@ double AlignmentGoal::call(const std::vector<double> &joints, const relaxed_ik::
     return (axis - axis_).squaredNorm();
 }
 
+double IKCostFnGoal::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
+                           const moveit::core::RobotState &state) {
+	return fn_(pose_, state, state.getRobotModel()->getJointModelGroup(v.joint_group), v.seed_state);
+}
+
 ObjectiveMaster::ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars, const std::vector<std::pair<std::shared_ptr<Objective>, double>> &objectives) : vars_(std::move(vars)) {
     state_ = std::make_shared<moveit::core::RobotState>(m);
     objectives_ = objectives;

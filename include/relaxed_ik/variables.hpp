@@ -9,5 +9,6 @@ namespace relaxed_ik {
         std::string ee_name;
         std::string joint_group;
         planning_scene::PlanningSceneConstPtr planning_scene;
+	std::vector<double> seed_state;
     };
 }

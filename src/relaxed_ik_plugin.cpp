@@ -95,6 +95,7 @@ namespace relaxed_ik {
         vars.ee_name = tip_frames_[0];
         vars.joint_group = group_name_;
         tf2::fromMsg(ik_poses[0], vars.target_pose);
+	vars.seed_state = ik_seed_state;
         std::vector<std::pair<std::shared_ptr<Objective>, double>> objectives;
         if (r_options) {
             objectives = r_options->objectives_;

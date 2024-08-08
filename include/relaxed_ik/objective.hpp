@@ -102,6 +102,15 @@ namespace relaxed_ik {
         const std::string link_name_;
     };
 
+    class IKCostFnGoal : public Objective {
+	    public:
+		    IKCostFnGoal(const geometry_msgs::msg::Pose &pose, const kinematics::KinematicsBase::IKCostFn &fn) : fn_(fn), pose_(pose) {};
+        double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+	    private:
+	const kinematics::KinematicsBase::IKCostFn fn_;
+	const geometry_msgs::msg::Pose pose_;
+	};
+
     class ObjectiveMaster {
     public:
         ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars, const std::vector<std::pair<std::shared_ptr<Objective>, double>> &objectives);
