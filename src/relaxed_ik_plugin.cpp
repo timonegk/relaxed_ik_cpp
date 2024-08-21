@@ -77,7 +77,8 @@ namespace relaxed_ik {
         auto *r_options = toRelaxedIKKinematicsQueryOptions(&options);
 
         const std::size_t n_joints = jmg_->getVariableCount();
-        auto opt = nlopt::opt(nlopt::LD_SLSQP, n_joints);
+        std::string opt_solver_name = node_->get_parameter_or("opt_solver", std::string("LD_SLSQP"));
+        auto opt = nlopt::opt(opt_solver_name.c_str(), n_joints);
         std::vector<double> lower_bounds, upper_bounds;
         for (const auto &variable: jmg_->getVariableNames()) {
             auto bounds = robot_model_->getVariableBounds(variable);
