@@ -132,9 +132,29 @@ double EnvCollisionDistance::call(const std::vector<double> &, const relaxed_ik:
     // if only one link gets closer, the gradient is small, if all get closer, it is bigger
     // with all-distance, this is not the case, the gradient is independent of how many links move
 
-    // allow end effector collision? or change reach setup? this does not work if it almost reaches
     collision_detection::AllowedCollisionMatrix acm;
-    acm.setDefaultEntry("ee_link", true);
+    acm.setDefaultEntry("end_effector", true);
+    double distance = planning_scene_->distanceToCollision(state, acm);
+    //double penalty_cutoff = 0.02;
+    double penalty_cutoff = 0.01;
+    // distance cost is 1 if distance == penalty_cutoff
+    double distance_cost = std::pow(2 * penalty_cutoff / (distance + penalty_cutoff), 2);
+    // with this groove loss, the loss is always -1 unless we get close to zero
+    // still, a value of 1 is relatively good, we might need to decrease c to get better values
+    return groove_loss(distance_cost, 0, 2, 2.5, 0.0035, 4);
+}
+
+double EnvCollisionDistance2::call(const std::vector<double> &, const relaxed_ik::Variables &v,
+                                  const moveit::core::RobotState &state) {
+    collision_detection::AllowedCollisionMatrix acm;
+    acm.setDefaultEntry("end_effector", true);
+    acm.setDefaultEntry("base_link_inertia", true);
+    acm.setDefaultEntry("shoulder_link", true);
+    acm.setDefaultEntry("upper_arm_link", true);
+    acm.setDefaultEntry("forearm_link", true);
+    acm.setDefaultEntry("wrist_1_link", true);
+    acm.setDefaultEntry("wrist_2_link", true);
+    acm.setDefaultEntry("wrist_3_link", true);
     double distance = planning_scene_->distanceToCollision(state, acm);
     //double penalty_cutoff = 0.02;
     double penalty_cutoff = 0.01;
