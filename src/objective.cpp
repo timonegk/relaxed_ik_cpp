@@ -134,7 +134,10 @@ double EnvCollisionDistance::call(const std::vector<double> &, const relaxed_ik:
 
     collision_detection::AllowedCollisionMatrix acm;
     acm.setDefaultEntry("end_effector", true);
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     double distance = planning_scene_->distanceToCollision(state, acm);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    time_ += std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
     //double penalty_cutoff = 0.02;
     double penalty_cutoff = 0.01;
     // distance cost is 1 if distance == penalty_cutoff
@@ -311,6 +314,7 @@ double ObjectiveMaster::call(const std::vector<double> &joints, std::vector<doub
     for (const auto &[objective, weight] : objectives_) {
         res += weight * objective->call(joints, vars_, *state_);
     }
+    calls_++;
     if (!grad.empty()) {
         for (std::size_t i = 0; i < joints.size(); ++i) {
             std::vector<double> x_h(joints);
@@ -322,6 +326,7 @@ double ObjectiveMaster::call(const std::vector<double> &joints, std::vector<doub
             for (const auto &[objective, weight] : objectives_) {
                 f_h += weight * objective->call(joints, vars_, *state_);
             }
+            calls_++;
             grad[i] = (-res + f_h) / eps;
         }
     }

@@ -53,8 +53,10 @@ namespace relaxed_ik {
     public:
         explicit EnvCollisionDistance(const planning_scene::PlanningSceneConstPtr &planning_scene) : planning_scene_(planning_scene) {};
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+        ~EnvCollisionDistance() { std::ofstream f; f.open("/tmp/call_count.csv", std::ofstream::app); f << ',' << time_; f.close(); }
     private:
         planning_scene::PlanningSceneConstPtr planning_scene_;
+        long time_{0};
     };
 
     class EnvCollisionDistance2 : public Objective {
@@ -141,9 +143,11 @@ namespace relaxed_ik {
     public:
         ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars, const std::vector<std::pair<std::shared_ptr<Objective>, double>> &objectives);
         double call(const std::vector<double> &joints, std::vector<double> &grad);
+        ~ObjectiveMaster() { std::ofstream f; f.open("/tmp/call_count.csv", std::ofstream::app); f << ',' << calls_; f.close(); }
     private:
         std::vector<std::pair<std::shared_ptr<Objective>, double>> objectives_;
         moveit::core::RobotStatePtr state_;
         const Variables vars_;
+        int calls_{0};
     };
 }

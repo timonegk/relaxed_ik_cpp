@@ -83,6 +83,7 @@ namespace relaxed_ik {
             moveit_msgs::msg::MoveItErrorCodes &error_code,
             kinematics::KinematicsQueryOptions const &options,
             moveit::core::RobotState const *context_state) const {
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         const auto start_time = std::chrono::high_resolution_clock::now();
         const auto params = parameter_listener_->get_params();
         auto *r_options = toRelaxedIKKinematicsQueryOptions(&options);
@@ -170,6 +171,12 @@ namespace relaxed_ik {
             error_code.val = moveit_msgs::msg::MoveItErrorCodes::NO_IK_SOLUTION;
         }
 
+
+        std::ofstream f;
+        f.open("/tmp/call_count.csv", std::ofstream::app);
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        f << '\n' << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
+        f.close();
         return found_solution;
     }
 }
