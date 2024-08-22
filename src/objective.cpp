@@ -158,7 +158,10 @@ double EnvCollisionDistance2::call(const std::vector<double> &, const relaxed_ik
     acm.setDefaultEntry("wrist_1_link", true);
     acm.setDefaultEntry("wrist_2_link", true);
     acm.setDefaultEntry("wrist_3_link", true);
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     double distance = planning_scene_->distanceToCollision(state, acm);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    time_ += std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
     //double penalty_cutoff = 0.02;
     double penalty_cutoff = 0.01;
     // distance cost is 1 if distance == penalty_cutoff

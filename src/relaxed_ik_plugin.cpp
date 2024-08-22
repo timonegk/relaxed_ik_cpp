@@ -175,7 +175,7 @@ namespace relaxed_ik {
         std::ofstream f;
         f.open("/tmp/call_count.csv", std::ofstream::app);
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        f << '\n' << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
+        f << '\n' << found_solution << ',' << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
         f.close();
         return found_solution;
     }

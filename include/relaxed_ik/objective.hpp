@@ -63,8 +63,10 @@ namespace relaxed_ik {
     public:
         explicit EnvCollisionDistance2(const planning_scene::PlanningSceneConstPtr &planning_scene) : planning_scene_(planning_scene) {};
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+        ~EnvCollisionDistance2() { std::ofstream f; f.open("/tmp/call_count.csv", std::ofstream::app); f << ',' << time_; f.close(); }
     private:
         planning_scene::PlanningSceneConstPtr planning_scene_;
+        long time_{0};
     };
 
     class EnvCollisionDepth : public Objective {
