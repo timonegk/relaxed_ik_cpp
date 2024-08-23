@@ -123,8 +123,7 @@ namespace relaxed_ik {
             } catch (const nlopt::roundoff_limited &) {
                 RCLCPP_WARN(node_->get_logger(), "nlopt::roundoff_limited error, result might still be usable");
             } catch (std::exception &e) {
-                RCLCPP_ERROR_STREAM(node_->get_logger(), "An exception occured in RelaxedIK: " << e.what());
-                return false;
+                RCLCPP_WARN_STREAM(node_->get_logger(), "An exception occured in RelaxedIK: " << e.what());
             }
 
             if (options.return_approximate_solution) {

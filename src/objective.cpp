@@ -179,6 +179,8 @@ double EnvCollisionDepth::call(const std::vector<double> &, const relaxed_ik::Va
         }
     }
     return groove_loss(penetration_depth, 0, 2, 0.01, 10, 2);
+    double cost = std::pow(penetration_depth / 0.05, 2);
+    return groove_loss(cost, 0, 2, 0.1, 0.0035, 2);
 }
 
 double RCMGoal::call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) {
