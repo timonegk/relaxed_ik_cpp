@@ -204,7 +204,7 @@ double RCMGoal::call(const std::vector<double> &joints, const Variables &v, cons
     return min_distance;
 }
 
-RCMGoal2::RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Eigen::Vector3d &point) : planning_scene(robot_model) {
+RCMGoal2::RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Eigen::Vector3d &point) : planning_scene_(robot_model) {
     moveit_msgs::msg::CollisionObject co;
     shape_msgs::msg::SolidPrimitive primitive;
     primitive.type = shape_msgs::msg::SolidPrimitive::SPHERE;
@@ -217,11 +217,39 @@ RCMGoal2::RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Ei
     co.operation = moveit_msgs::msg::CollisionObject::ADD;
     co.header.frame_id = "world";
     co.id = "RCM";
-    planning_scene.processCollisionObjectMsg(co);
+    planning_scene_.processCollisionObjectMsg(co);
+    acm_.setDefaultEntry("RCM", true);
+    acm_.setEntry("endo_first_link", "RCM", false);
 }
 
 double RCMGoal2::call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) {
-    return planning_scene.distanceToCollision(state);
+    double distance = planning_scene_.distanceToCollision(state, acm_);
+    distance = std::max(distance, 0.0);
+    return groove_loss(distance, 0, 2, 0.01, 10, 2);
+}
+
+double RCMGoal3::call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) {
+    std::size_t link_index = 0;
+    for (std::size_t i = 0; i < state.getRobotModel()->getLinkModelCount() - 1; ++i) {
+        if (state.getRobotModel()->getLinkModelNames()[i] == link_name_) {
+            link_index = i;
+            break;
+        }
+    }
+    const moveit::core::LinkModel *frame_model = state.getRobotModel()->getLinkModel(link_index);
+    const moveit::core::LinkModel *next_frame_model = state.getRobotModel()->getLinkModel(link_index + 1);
+    const Eigen::Isometry3d frame = state.getGlobalLinkTransform(frame_model);
+    const Eigen::Isometry3d next_frame = state.getGlobalLinkTransform(next_frame_model);
+    Eigen::Vector3d projected_point;
+    if (frame.translation() != next_frame.translation()) {
+        const double t = (point_ - frame.translation()).dot(next_frame.translation() - frame.translation()) / (frame.translation() - next_frame.translation()).squaredNorm();
+        const double clipped_t = std::clamp(t, 0.0, 1.0);
+        projected_point = frame.translation() + clipped_t * (next_frame.translation() - frame.translation());
+    } else {
+        projected_point = frame.translation();
+    }
+    const double distance = (point_ - projected_point).squaredNorm();
+    return distance;
 }
 
 double LineGoal::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,

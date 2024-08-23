@@ -86,7 +86,17 @@ namespace relaxed_ik {
         RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Eigen::Vector3d &point);
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
     private:
-        planning_scene::PlanningScene planning_scene;
+        planning_scene::PlanningScene planning_scene_;
+        collision_detection::AllowedCollisionMatrix acm_;
+    };
+
+    class RCMGoal3 : public Objective {
+    public:
+        explicit RCMGoal3(const std::string &link_name, Eigen::Vector3d point) : point_(std::move(point)), link_name_(link_name) {};
+        double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    private:
+        const Eigen::Vector3d point_;
+        const std::string link_name_;
     };
 
     class LineGoal : public Objective {
