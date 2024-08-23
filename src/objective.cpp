@@ -178,7 +178,30 @@ double EnvCollisionDepth::call(const std::vector<double> &, const relaxed_ik::Va
             penetration_depth += contact.depth;
         }
     }
-    return groove_loss(penetration_depth, 0, 2, 0.01, 10, 2);
+    double cost = std::pow(penetration_depth / 0.05, 2);
+    return groove_loss(cost, 0, 2, 0.1, 0.0035, 2);
+}
+
+double EnvCollisionDepth2::call(const std::vector<double> &, const relaxed_ik::Variables &v,
+                          const moveit::core::RobotState &state) {
+    collision_detection::AllowedCollisionMatrix acm;
+    acm.setDefaultEntry("base_link_inertia", true);
+    acm.setDefaultEntry("shoulder_link", true);
+    acm.setDefaultEntry("upper_arm_link", true);
+    acm.setDefaultEntry("forearm_link", true);
+    acm.setDefaultEntry("wrist_1_link", true);
+    acm.setDefaultEntry("wrist_2_link", true);
+    acm.setDefaultEntry("wrist_3_link", true);
+    collision_detection::CollisionRequest req;
+    req.contacts = true;
+    collision_detection::CollisionResult res;
+    planning_scene_->checkCollision(req, res, state, acm);
+    double penetration_depth = 0;
+    for (const auto &[link_names, contacts] : res.contacts) {
+        for (const auto &contact : contacts) {
+            penetration_depth += contact.depth;
+        }
+    }
     double cost = std::pow(penetration_depth / 0.05, 2);
     return groove_loss(cost, 0, 2, 0.1, 0.0035, 2);
 }

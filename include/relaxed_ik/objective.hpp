@@ -73,6 +73,14 @@ namespace relaxed_ik {
         planning_scene::PlanningSceneConstPtr planning_scene_;
     };
 
+    class EnvCollisionDepth2 : public Objective {
+    public:
+        explicit EnvCollisionDepth2(const planning_scene::PlanningSceneConstPtr &planning_scene) : planning_scene_(planning_scene) {};
+        double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    private:
+        planning_scene::PlanningSceneConstPtr planning_scene_;
+    };
+
     class RCMGoal : public Objective {
     public:
         explicit RCMGoal(Eigen::Vector3d point) : point_(std::move(point)) {};
