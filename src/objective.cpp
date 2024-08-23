@@ -177,7 +177,10 @@ double EnvCollisionDepth::call(const std::vector<double> &, const relaxed_ik::Va
     collision_detection::CollisionRequest req;
     req.contacts = true;
     collision_detection::CollisionResult res;
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     planning_scene_->checkCollision(req, res, state);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    time_ += std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
     double penetration_depth = 0;
     for (const auto &[link_names, contacts] : res.contacts) {
         for (const auto &contact : contacts) {
@@ -204,7 +207,10 @@ double EnvCollisionDepth2::call(const std::vector<double> &, const relaxed_ik::V
     collision_detection::CollisionRequest req;
     req.contacts = true;
     collision_detection::CollisionResult res;
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     planning_scene_->checkCollision(req, res, state, acm);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    time_ += std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
     double penetration_depth = 0;
     for (const auto &[link_names, contacts] : res.contacts) {
         for (const auto &contact : contacts) {
