@@ -192,6 +192,9 @@ double EnvCollisionDepth2::call(const std::vector<double> &, const relaxed_ik::V
     acm.setDefaultEntry("wrist_1_link", true);
     acm.setDefaultEntry("wrist_2_link", true);
     acm.setDefaultEntry("wrist_3_link", true);
+    acm.setEntry("endo_box", "endo_first_link", true);
+    acm.setEntry("endo_first_link", "endo_second_link", true);
+    acm.setEntry("endo_second_link", "endo_third_link", true);
     collision_detection::CollisionRequest req;
     req.contacts = true;
     collision_detection::CollisionResult res;
