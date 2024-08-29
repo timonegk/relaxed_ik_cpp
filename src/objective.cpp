@@ -314,7 +314,7 @@ double ObjectiveMaster::call(const std::vector<double> &joints, std::vector<doub
     if (!grad.empty()) {
         for (std::size_t i = 0; i < joints.size(); ++i) {
             std::vector<double> x_h(joints);
-            const double eps = 0.0001;
+            const double eps = 0.0000001;
             x_h[i] += eps;
             state_->setJointGroupPositions(vars_.joint_group, x_h);
             state_->update();

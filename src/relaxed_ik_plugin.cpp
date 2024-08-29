@@ -1,3 +1,4 @@
+#include <kdl/frames.hpp>
 #include <nlopt.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
 #include <relaxed_ik/relaxed_ik_plugin.hpp>
@@ -30,6 +31,16 @@ namespace relaxed_ik {
             return (const RelaxedIKKinematicsQueryOptions *)ptr;
         else
             return 0;
+    }
+
+    static KDL::Frame eigenToKDL(const Eigen::Isometry3d &t) {
+        KDL::Frame f;
+        f.p.x(t.translation().x());
+        f.p.y(t.translation().y());
+        f.p.z(t.translation().z());
+        Eigen::Quaterniond q(t.rotation());
+        f.M = KDL::Rotation::Quaternion(q.x(), q.y(), q.z(), q.w());
+        return f;
     }
 
 
@@ -107,8 +118,7 @@ namespace relaxed_ik {
         ObjectiveMaster om(robot_model_, vars, objectives);
 
         opt.set_min_objective(RelaxedIKPlugin::wrap, &om);
-        opt.set_ftol_abs(0.0005);  // stop when function value is not improved by at least this
-        opt.set_xtol_abs(0.0001);  // stop when all parameter changes add up to less than this
+        opt.set_xtol_rel(0.000001);
 
         solution = ik_seed_state;
 
@@ -133,13 +143,11 @@ namespace relaxed_ik {
                 state_->setJointGroupPositions(vars.joint_group, solution);
                 state_->updateLinkTransforms();
                 const Eigen::Isometry3d current = state_->getGlobalLinkTransform(vars.ee_name);
-                const double position_threshold = 0.001;
-                const double orientation_threshold = 0.001;
-                const double linear_distance = (current.translation() - vars.target_pose.translation()).norm();
-                const Eigen::Quaterniond current_orientation(current.rotation());
-                const Eigen::Quaterniond target_orientation(vars.target_pose.rotation());
-                const double angular_distance = current_orientation.angularDistance(target_orientation);
-                found_solution = (linear_distance < position_threshold && angular_distance < orientation_threshold);
+                KDL::Frame current_kdl = eigenToKDL(current);
+                KDL::Frame target_kdl = eigenToKDL(vars.target_pose);
+                KDL::Twist diff(target_kdl.M.Inverse() * KDL::diff(target_kdl.p, current_kdl.p),
+                                target_kdl.M.Inverse() * KDL::diff(target_kdl.M, current_kdl.M));
+                found_solution = KDL::Equal(diff, KDL::Twist::Zero(), 1e-5);
 
                 if (solution_callback && found_solution) {
                     solution_callback(tf2::toMsg(current), solution, error_code);
