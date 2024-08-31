@@ -227,7 +227,7 @@ double RCMGoal::call(const std::vector<double> &joints, const Variables &v, cons
         const double distance = (point_ - projected_point).squaredNorm();
         min_distance = std::min(min_distance, distance);
     }
-    return min_distance;
+    return groove_loss(min_distance, 0, 2, 0.01, 10, 2);
 }
 
 RCMGoal2::RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Eigen::Vector3d &point) : planning_scene_(robot_model) {
@@ -275,7 +275,7 @@ double RCMGoal3::call(const std::vector<double> &joints, const Variables &v, con
         projected_point = frame.translation();
     }
     const double distance = (point_ - projected_point).squaredNorm();
-    return distance;
+    return groove_loss(distance, 0, 2, 0.01, 10, 2);
 }
 
 double LineGoal::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
