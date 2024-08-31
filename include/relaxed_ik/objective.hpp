@@ -101,7 +101,9 @@ namespace relaxed_ik {
     public:
         RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Eigen::Vector3d &point);
         double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+        ~RCMGoal2() { std::ofstream f; f.open("/tmp/call_count.csv", std::ofstream::app); f << ',' << time_; f.close(); }
     private:
+        long time_{0};
         planning_scene::PlanningScene planning_scene_;
         collision_detection::AllowedCollisionMatrix acm_;
     };

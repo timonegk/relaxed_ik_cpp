@@ -261,7 +261,10 @@ RCMGoal2::RCMGoal2(const moveit::core::RobotModelConstPtr &robot_model, const Ei
 }
 
 double RCMGoal2::call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     double distance = planning_scene_.distanceToCollision(state, acm_);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    time_ += std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count();
     distance = std::max(distance, 0.0);
     return groove_loss(distance, 0, 2, 0.01, 10, 2);
 }
