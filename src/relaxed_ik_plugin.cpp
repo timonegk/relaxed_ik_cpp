@@ -88,7 +88,7 @@ namespace relaxed_ik {
         auto *r_options = toRelaxedIKKinematicsQueryOptions(&options);
 
         const std::size_t n_joints = jmg_->getVariableCount();
-        std::string opt_solver_name = node_->get_parameter_or("opt_solver", std::string("LD_SLSQP"));
+        std::string opt_solver_name = params.opt_solver;
         auto opt = nlopt::opt(opt_solver_name.c_str(), n_joints);
         std::vector<double> lower_bounds, upper_bounds;
         for (const auto &variable: jmg_->getVariableNames()) {
@@ -147,7 +147,7 @@ namespace relaxed_ik {
                 KDL::Frame target_kdl = eigenToKDL(vars.target_pose);
                 KDL::Twist diff(target_kdl.M.Inverse() * KDL::diff(target_kdl.p, current_kdl.p),
                                 target_kdl.M.Inverse() * KDL::diff(target_kdl.M, current_kdl.M));
-                found_solution = KDL::Equal(diff, KDL::Twist::Zero(), 1e-5);
+                found_solution = KDL::Equal(diff, KDL::Twist::Zero(), params.epsilon);
 
                 if (solution_callback && found_solution) {
                     solution_callback(tf2::toMsg(current), solution, error_code);

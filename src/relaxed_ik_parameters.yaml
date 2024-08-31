@@ -1,8 +1,13 @@
 relaxed_ik:
-  position_threshold: {
+  opt_solver: {
+    type: string,
+    default_value: LD_SLSQP,
+    description: "Optimization solver from NLOPT. Default is LD_SLSQP.",
+  }
+  epsilon: {
     type: double,
-    default_value: 0.001,
-    description: "Position threshold for solving IK, in meters",
+    default_value: 0.00001,
+    description: "Threshold for solution twist diff. Default is 1e-5.",
     validation: {
       gt_eq<>: [0.0],
     }
