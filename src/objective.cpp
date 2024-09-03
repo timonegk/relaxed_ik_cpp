@@ -282,14 +282,16 @@ double LineGoal::call(const std::vector<double> &joints, const relaxed_ik::Varia
                       const moveit::core::RobotState &state) {
     Eigen::Vector3d link_position = state.getGlobalLinkTransform(link_name_).translation();
     const Eigen::Vector3d p = link_position - axis_ * axis_.dot(link_position - point_);
-    return (point_ - p).squaredNorm();
+    double dist = (point_ - p).squaredNorm();
+    return groove_loss(dist, 0, 2, 0.1, 10, 2);
 }
 
 double AlignmentGoal::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
                            const moveit::core::RobotState &state) {
     const Eigen::Isometry3d& link_pose = state.getGlobalLinkTransform(link_name_);
     const Eigen::Vector3d axis = link_pose.rotation() * Eigen::Vector3d(0, 1, 0);
-    return (axis - axis_).squaredNorm();
+    double dist = (axis - axis_).squaredNorm();
+    return groove_loss(dist, 0, 2, 0.1, 10, 2);
 }
 
 double IKCostFnGoal::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
