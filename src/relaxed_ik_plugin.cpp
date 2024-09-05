@@ -143,11 +143,25 @@ namespace relaxed_ik {
                 state_->setJointGroupPositions(vars.joint_group, solution);
                 state_->updateLinkTransforms();
                 const Eigen::Isometry3d current = state_->getGlobalLinkTransform(vars.ee_name);
-                KDL::Frame current_kdl = eigenToKDL(current);
-                KDL::Frame target_kdl = eigenToKDL(vars.target_pose);
-                KDL::Twist diff(target_kdl.M.Inverse() * KDL::diff(target_kdl.p, current_kdl.p),
-                                target_kdl.M.Inverse() * KDL::diff(target_kdl.M, current_kdl.M));
-                found_solution = KDL::Equal(diff, KDL::Twist::Zero(), params.epsilon);
+
+                if (std::string(typeid(*objectives[0].first).name()).find("ScanGoal") == std::string::npos) {  // 🤮
+                    KDL::Frame current_kdl = eigenToKDL(current);
+                    KDL::Frame target_kdl = eigenToKDL(vars.target_pose);
+                    KDL::Twist diff(target_kdl.M.Inverse() * KDL::diff(target_kdl.p, current_kdl.p),
+                                    target_kdl.M.Inverse() * KDL::diff(target_kdl.M, current_kdl.M));
+                    found_solution = KDL::Equal(diff, KDL::Twist::Zero(), params.epsilon);
+                } else {
+                    const Eigen::Isometry3d& target = vars.target_pose;
+                    const Eigen::Vector3d current_to_target = target.translation() - current.translation();
+                    const double distance = current_to_target.norm();
+
+                    const Eigen::Vector3d target_normal = target.rotation() * Eigen::Vector3d{0, 0, 1};
+                    const double normal_angle = (target_normal - current_to_target.normalized()).norm();
+
+                    const Eigen::Vector3d sensor_normal = current.rotation() * Eigen::Vector3d{0, 0, 1};
+                    const double fov_angle = (sensor_normal - current_to_target.normalized()).norm();
+                    found_solution = 0 < distance && distance < 0.02 && std::abs(normal_angle) < 0.2 && std::abs(fov_angle) < 0.2;
+                }
 
                 if (solution_callback && found_solution) {
                     solution_callback(tf2::toMsg(current), solution, error_code);

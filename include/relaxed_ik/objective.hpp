@@ -137,6 +137,11 @@ namespace relaxed_ik {
 	const geometry_msgs::msg::Pose pose_;
 	};
 
+    class ScanGoal : public Objective {
+        public:
+            double call(const std::vector<double> &joints, const Variables &v, const moveit::core::RobotState &state) override;
+    };
+
     class ObjectiveMaster {
     public:
         ObjectiveMaster(const moveit::core::RobotModelConstPtr &m, Variables vars, const std::vector<std::pair<std::shared_ptr<Objective>, double>> &objectives);

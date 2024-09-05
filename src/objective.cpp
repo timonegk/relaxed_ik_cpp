@@ -294,6 +294,26 @@ double AlignmentGoal::call(const std::vector<double> &joints, const relaxed_ik::
     return groove_loss(dist, 0, 2, 0.1, 10, 2);
 }
 
+double ScanGoal::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
+                           const moveit::core::RobotState &state) {
+    const Eigen::Isometry3d& current = state.getGlobalLinkTransform(v.ee_name);
+    const Eigen::Isometry3d& target = v.target_pose;
+    const Eigen::Vector3d current_to_target = target.translation() - current.translation();
+    const double distance = current_to_target.norm();
+
+    const Eigen::Vector3d target_normal = target.rotation() * Eigen::Vector3d{0, 0, 1};
+    const double normal_angle = (target_normal - current_to_target.normalized()).norm();
+
+    const Eigen::Vector3d sensor_normal = current.rotation() * Eigen::Vector3d{0, 0, 1};
+    const double fov_angle = (sensor_normal - current_to_target.normalized()).norm();
+
+    return (swamp_loss(distance, 0, 0.02, 1.0, 0.1, 8) +
+            swamp_loss(normal_angle, -0.1, 0.1, 1.0, 0.1, 8) +
+            swamp_loss(fov_angle, -0.1, 0.1, 1.0, 0.1, 8));
+}
+
+
+
 double IKCostFnGoal::call(const std::vector<double> &joints, const relaxed_ik::Variables &v,
                            const moveit::core::RobotState &state) {
 	return fn_(pose_, state, state.getRobotModel()->getJointModelGroup(v.joint_group), v.seed_state);
