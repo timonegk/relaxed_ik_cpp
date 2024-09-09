@@ -143,8 +143,16 @@ namespace relaxed_ik {
                 state_->setJointGroupPositions(vars.joint_group, solution);
                 state_->updateLinkTransforms();
                 const Eigen::Isometry3d current = state_->getGlobalLinkTransform(vars.ee_name);
-
-                if (std::string(typeid(*objectives[0].first).name()).find("ScanGoal") == std::string::npos) {  // 🤮
+                bool has_scan = false, has_rcm = false;
+                for(const auto &[o, w] : objectives) {
+                    std::string tid = std::string(typeid(*o).name());
+                    if (tid.find("ScanGoal") != std::string::npos) {
+                        has_scan = true;
+                    } else if (tid.find("RCMGoal") != std::string::npos) {
+                        has_rcm = true;
+                    }
+                }
+                if (has_scan) {
                     KDL::Frame current_kdl = eigenToKDL(current);
                     KDL::Frame target_kdl = eigenToKDL(vars.target_pose);
                     KDL::Twist diff(target_kdl.M.Inverse() * KDL::diff(target_kdl.p, current_kdl.p),
